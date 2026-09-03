@@ -1,7 +1,7 @@
 {
   "name": "b9-pulse-agents",
-  "version": "0.1.0",
-  "description": "Diagnose and resolve B9 fiscal billing cases with evidence, approvals, and a five-minute SLA.",
+  "version": "0.2.0+codex.20260903132811",
+  "description": "Route and resolve 100 recurring B9 fiscal billing cases with eight specialists, evidence, approvals, and a five-minute SLA.",
   "author": {
     "name": "Biti9",
     "url": "https://github.com/rodrigo-freitas-biti9"
@@ -9,20 +9,30 @@
   "homepage": "https://github.com/rodrigo-freitas-biti9/agents",
   "repository": "https://github.com/rodrigo-freitas-biti9/agents",
   "license": "UNLICENSED",
-  "keywords": ["b9-pulse", "fiscal", "faturamento", "notas-fiscais", "mcp"],
+  "keywords": [
+    "b9-pulse",
+    "fiscal",
+    "faturamento",
+    "notas-fiscais",
+    "mcp"
+  ],
   "skills": "./skills/",
   "interface": {
     "displayName": "B9 Pulse Agents",
-    "shortDescription": "Resolva ocorrências fiscais em até cinco minutos.",
-    "longDescription": "Orquestra diagnóstico, conciliação e resolução de notas fiscais e ordens de compra com evidências e confirmação humana.",
+    "shortDescription": "Resolva ocorr\u00eancias fiscais em at\u00e9 cinco minutos.",
+    "longDescription": "Classifica 100 dores e aciona oito especialistas para monitorar e resolver notas fiscais, ordens de compra, aprova\u00e7\u00f5es e fornecedores com evid\u00eancias e confirma\u00e7\u00e3o humana.",
     "developerName": "Biti9",
     "category": "Productivity",
-    "capabilities": ["Read", "MCP", "Workflow"],
+    "capabilities": [
+      "Read",
+      "MCP",
+      "Workflow"
+    ],
     "websiteURL": "https://github.com/rodrigo-freitas-biti9/agents",
     "defaultPrompt": [
-      "Diagnostique este caso fiscal e priorize o próximo passo.",
-      "Encontre a causa desta divergência de nota e OC.",
-      "Prepare uma resolução segura para este caso em cinco minutos."
+      "Classifique esta dor no cat\u00e1logo fiscal e escolha o especialista B9.",
+      "Diagnostique este caso fiscal e priorize o pr\u00f3ximo passo.",
+      "Encontre a causa desta diverg\u00eancia de nota e OC."
     ],
     "brandColor": "#29D8EA"
   },

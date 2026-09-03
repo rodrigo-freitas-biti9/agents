@@ -21,6 +21,9 @@ importers:
       '@types/node':
         specifier: ^24.3.0
         version: 24.13.3
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
       tsx:
         specifier: 4.23.13
         version: 4.23.13
@@ -2150,4 +2153,3 @@ snapshots:
       zod: 4.5.4
 
   zod@4.5.4: {}
-

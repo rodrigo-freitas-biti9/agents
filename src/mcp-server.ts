@@ -4,12 +4,61 @@ import { z } from "zod";
 import { invoiceSchema, pulseRequestSchema } from "./contracts.js";
 import { diagnoseCase, findInvoice } from "./domain/fiscal.js";
 import { getSlaSnapshot } from "./domain/sla.js";
+import { routeFiscalQuestion } from "./domain/triage.js";
+import { fiscalProblems } from "./knowledge/fiscal-problems.js";
 
 const server = new McpServer(
-  { name: "b9-pulse", version: "0.1.0" },
+  { name: "b9-pulse", version: "0.2.0" },
   {
     instructions:
       "Use as ferramentas de leitura antes de propor uma solução. Alterações fiscais exigem confirmação humana e verificação posterior.",
+  },
+);
+
+server.registerTool(
+  "triage_fiscal_problem",
+  {
+    title: "Classificar dor fiscal",
+    description: "Classifica uma pergunta no catálogo das 100 dores e seleciona o especialista B9.",
+    inputSchema: {
+      question: z.string().min(2).max(2_000),
+      limit: z.number().int().min(1).max(10).default(3),
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  },
+  async ({ question, limit }) => {
+    const triage = routeFiscalQuestion(question, limit);
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          ...triage,
+          matches: triage.matches.map(({ problem, score }) => ({ ...problem, score })),
+        }, null, 2),
+      }],
+    };
+  },
+);
+
+server.registerTool(
+  "list_fiscal_problem_catalog",
+  {
+    title: "Listar catálogo de dores fiscais",
+    description: "Lista as dores fiscais conhecidas, opcionalmente por categoria ou especialista.",
+    inputSchema: {
+      category: z.string().max(100).optional(),
+      specialist: z.string().max(100).optional(),
+      limit: z.number().int().min(1).max(100).default(100),
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  },
+  async ({ category, specialist, limit }) => {
+    const normalizedCategory = category?.toLocaleLowerCase("pt-BR");
+    const items = fiscalProblems
+      .filter((problem) => !normalizedCategory || problem.category.toLocaleLowerCase("pt-BR") === normalizedCategory)
+      .filter((problem) => !specialist || problem.specialist === specialist)
+      .slice(0, limit);
+    return { content: [{ type: "text", text: JSON.stringify(items, null, 2) }] };
   },
 );
 

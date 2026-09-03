@@ -9,6 +9,8 @@ import {
 import { buildResolutionCandidate, diagnoseCase, findInvoice } from "../domain/fiscal.js";
 import { deterministicAnswer } from "../domain/fallback.js";
 import { getSlaSnapshot } from "../domain/sla.js";
+import { routeFiscalQuestion, type FiscalTriage } from "../domain/triage.js";
+import type { FiscalSpecialistId } from "../knowledge/fiscal-problems.js";
 
 const BASE_INSTRUCTIONS = `
 Você é o B9 Pulse, copiloto fiscal da Biti9. Responda em português brasileiro, com números específicos e linguagem clara.
@@ -24,7 +26,7 @@ Regras obrigatórias:
 - O resultado deve seguir o schema estruturado e incluir evidências curtas.
 `.trim();
 
-function makeTools(request: PulseRequest) {
+function makeTools(request: PulseRequest, triage: FiscalTriage) {
   const diagnosis = diagnoseCase(request);
 
   const inspectCase = tool({
@@ -74,70 +76,122 @@ function makeTools(request: PulseRequest) {
     execute: async (input) => buildResolutionCandidate(input, request.invoices),
   });
 
-  return { inspectCase, searchInvoices, prepareResolution };
+  const inspectProblemCatalog = tool({
+    name: "inspect_problem_catalog",
+    description: "Retorna as dores fiscais mais compatíveis com a pergunta e seus próximos passos seguros.",
+    parameters: z.object({}),
+    execute: async () => ({
+      specialist: triage.specialist,
+      confidence: triage.confidence,
+      matches: triage.matches.map(({ problem, score }) => ({
+        id: problem.id,
+        rank: problem.rank,
+        title: problem.title,
+        category: problem.category,
+        priority: problem.priority,
+        score,
+        nextAction: problem.nextAction,
+      })),
+    }),
+  });
+
+  return { inspectCase, searchInvoices, prepareResolution, inspectProblemCatalog };
 }
 
-function createAgentGraph(request: PulseRequest) {
-  const tools = makeTools(request);
+interface SpecialistSpec {
+  name: string;
+  focus: string;
+  canPrepareMutation: boolean;
+}
+
+const SPECIALISTS: Record<FiscalSpecialistId, SpecialistSpec> = {
+  intake_capture: {
+    name: "B9 Recebimento e Captura",
+    focus: "XML, PDF, OCR, anexos, classificação documental, campos ausentes e filas de entrada.",
+    canPrepareMutation: false,
+  },
+  tax_validation: {
+    name: "B9 Validação Fiscal",
+    focus: "rejeições, cadastros, CFOP, NCM, CST, CSOSN, totais, bases, alíquotas e retenções.",
+    canPrepareMutation: true,
+  },
+  po_reconciliation: {
+    name: "B9 Conciliação de OC",
+    focus: "nota, ordem de compra, contrato, recebimento, saldo, orçamento, quantidade e valor.",
+    canPrepareMutation: true,
+  },
+  approval_workflow: {
+    name: "B9 Aprovações e SLA",
+    focus: "alçadas, aprovadores, delegações, segregação, pendências e prazo operacional.",
+    canPrepareMutation: true,
+  },
+  document_lifecycle: {
+    name: "B9 Ciclo de Vida Fiscal",
+    focus: "autorização, denegação, inutilização, cancelamento, CC-e, manifestação e devolução.",
+    canPrepareMutation: false,
+  },
+  supplier_risk: {
+    name: "B9 Fornecedor e Risco",
+    focus: "duplicidade, fraude, identidade, cadastro mestre, dados bancários e comunicação com fornecedor.",
+    canPrepareMutation: true,
+  },
+  integration_compliance: {
+    name: "B9 Integrações e Compliance",
+    focus: "ERP, APIs, certificados, credenciais, schemas, CNPJ alfanumérico e IBS/CBS.",
+    canPrepareMutation: false,
+  },
+  monitoring_insights: {
+    name: "B9 Monitoramento e Insights",
+    focus: "visão executiva e operacional de status, vencimentos, consumo da OC, exceções e tendências.",
+    canPrepareMutation: false,
+  },
+};
+
+function createSpecialistAgent(request: PulseRequest, triage: FiscalTriage) {
+  const tools = makeTools(request, triage);
   const model = process.env.OPENAI_MODEL || "gpt-5.6";
+  const specialist = SPECIALISTS[triage.specialist];
+  const selectedTools = specialist.canPrepareMutation
+    ? [tools.inspectProblemCatalog, tools.inspectCase, tools.searchInvoices, tools.prepareResolution]
+    : [tools.inspectProblemCatalog, tools.inspectCase, tools.searchInvoices];
 
-  const diagnosticAgent = new Agent({
-    name: "B9 Diagnóstico Fiscal",
-    handoffDescription: "Investiga erros de leitura, ausência de OC e dados insuficientes.",
-    model,
-    instructions: `${BASE_INSTRUCTIONS}\nFoque em reunir evidências e explicar a causa provável sem alterar dados.`,
-    tools: [tools.inspectCase, tools.searchInvoices],
-    outputType: agentOutputSchema,
-  });
-
-  const reconciliationAgent = new Agent({
-    name: "B9 Conciliação",
-    handoffDescription: "Trata divergências, duplicidades e reconciliação de notas contra OCs.",
-    model,
-    instructions: `${BASE_INSTRUCTIONS}\nCompare a nota, o fornecedor e a OC. Prepare uma ação apenas se o pedido mais recente for explícito.`,
-    tools: [tools.inspectCase, tools.searchInvoices, tools.prepareResolution],
-    outputType: agentOutputSchema,
-  });
-
-  const resolutionAgent = new Agent({
-    name: "B9 Resolução",
-    handoffDescription: "Conduz aprovação, rejeição, pagamento e próximo passo com confirmação humana.",
-    model,
-    instructions: `${BASE_INSTRUCTIONS}\nEscolha a menor ação segura que resolva o caso e deixe claro o ponto de confirmação.`,
-    tools: [tools.inspectCase, tools.searchInvoices, tools.prepareResolution],
-    outputType: agentOutputSchema,
-  });
-
-  return Agent.create({
-    name: "B9 Pulse Orquestrador",
+  return new Agent({
+    name: specialist.name,
     model,
     instructions: `${BASE_INSTRUCTIONS}
-Classifique a intenção e encaminhe ao especialista adequado. Responda diretamente apenas para consultas gerais simples.
-Use Diagnóstico para erros/ausência de dados, Conciliação para divergência/duplicidade/OC e Resolução para ações financeiras.`,
-    tools: [tools.inspectCase, tools.searchInvoices],
-    handoffs: [diagnosticAgent, reconciliationAgent, resolutionAgent],
+Você é o especialista selecionado por roteamento determinístico. Seu foco é: ${specialist.focus}
+Classificação inicial: ${triage.reason} (confiança ${triage.confidence}).
+Consulte o catálogo e os dados do caso. Corrija a classificação se as evidências demonstrarem outra causa.
+Responda com diagnóstico, evidência, próximo passo, dono recomendado e informação faltante. Não transforme o atendimento em gestão ampla de fluxo de caixa.`,
+    tools: selectedTools,
     outputType: agentOutputSchema,
   });
 }
 
-function buildTranscript(request: PulseRequest): string {
-  return request.messages
+function buildTranscript(request: PulseRequest, triage: FiscalTriage): string {
+  const conversation = request.messages
     .slice(-16)
     .map((message) => `${message.role === "user" ? "Cliente" : "B9 Pulse"}: ${message.content}`)
     .join("\n");
+  const candidates = triage.matches.map(({ problem }) => `${problem.id} ${problem.title}`).join("; ");
+  return `Triagem local: ${triage.reason}. Candidatos: ${candidates || "nenhum"}.\n${conversation}`;
 }
 
 export async function runB9Pulse(request: PulseRequest): Promise<PulseResponse> {
   const startedAt = Date.now();
   const caseId = request.caseId ?? `b9-${startedAt.toString(36)}`;
+  const question = request.messages.at(-1)?.content ?? "";
+  const triage = routeFiscalQuestion(question);
   let output: AgentOutput;
   let mode: PulseResponse["mode"];
 
   if (!process.env.OPENAI_API_KEY) {
-    output = deterministicAnswer(request);
+    output = deterministicAnswer(request, triage);
     mode = "deterministic";
   } else {
-    const result = await run(createAgentGraph(request), buildTranscript(request), { maxTurns: 8 });
+    const result = await run(createSpecialistAgent(request, triage), buildTranscript(request, triage), {
+      maxTurns: 5,
+    });
     output = agentOutputSchema.parse(result.finalOutput);
     mode = "openai";
   }
@@ -146,6 +200,12 @@ export async function runB9Pulse(request: PulseRequest): Promise<PulseResponse> 
     ...output,
     caseId,
     mode,
+    routing: {
+      specialist: triage.specialist,
+      problemIds: triage.matches.map(({ problem }) => problem.id),
+      confidence: triage.confidence,
+      reason: triage.reason,
+    },
     sla: getSlaSnapshot(startedAt),
   };
 }

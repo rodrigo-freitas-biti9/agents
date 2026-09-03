@@ -90,6 +90,24 @@ export const agentOutputSchema = z.object({
   evidence: z.array(z.string()).max(8).default([]),
 });
 
+export const fiscalSpecialistSchema = z.enum([
+  "intake_capture",
+  "tax_validation",
+  "po_reconciliation",
+  "approval_workflow",
+  "document_lifecycle",
+  "supplier_risk",
+  "integration_compliance",
+  "monitoring_insights",
+]);
+
+export const routingSchema = z.object({
+  specialist: fiscalSpecialistSchema,
+  problemIds: z.array(z.string()).max(3),
+  confidence: z.number().min(0).max(1),
+  reason: z.string(),
+});
+
 export const pulseResponseSchema = agentOutputSchema.extend({
   caseId: z.string(),
   mode: z.enum(["openai", "deterministic"]),
@@ -99,6 +117,7 @@ export const pulseResponseSchema = agentOutputSchema.extend({
     remainingMs: z.number().int(),
     breached: z.boolean(),
   }),
+  routing: routingSchema,
 });
 
 export type Invoice = z.infer<typeof invoiceSchema>;

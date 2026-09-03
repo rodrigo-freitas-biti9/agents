@@ -1,5 +1,6 @@
 import type { AgentOutput, PulseRequest } from "../contracts.js";
 import { diagnoseCase, findInvoice, formatBrl } from "./fiscal.js";
+import { routeFiscalQuestion, type FiscalTriage } from "./triage.js";
 
 function label(status: PulseRequest["invoices"][number]["status"]): string {
   return {
@@ -13,9 +14,13 @@ function label(status: PulseRequest["invoices"][number]["status"]): string {
   }[status];
 }
 
-export function deterministicAnswer(request: PulseRequest): AgentOutput {
+export function deterministicAnswer(
+  request: PulseRequest,
+  precomputedTriage?: FiscalTriage,
+): AgentOutput {
   const diagnosis = diagnoseCase(request);
   const question = request.messages.at(-1)?.content ?? "";
+  const triage = precomputedTriage ?? routeFiscalQuestion(question);
   const matched = findInvoice(question, request.invoices);
 
   if (matched) {
@@ -23,6 +28,18 @@ export function deterministicAnswer(request: PulseRequest): AgentOutput {
       reply: `A nota **${matched.description}** é de ${formatBrl(matched.amount)} e está ${label(matched.status)}. ${matched.reason || "Não há justificativa adicional registrada."}`,
       status: "informational",
       evidence: [matched.id, matched.issueDate, matched.status],
+    };
+  }
+
+  const classifiedProblem = triage.matches[0]?.problem;
+  if (classifiedProblem && triage.confidence >= 0.6) {
+    return {
+      reply: `Classifiquei o caso como **${classifiedProblem.title}** (${classifiedProblem.id}). Próximo passo: ${classifiedProblem.nextAction}`,
+      status: "needs_data",
+      evidence: [
+        `Especialista: ${triage.specialist}`,
+        ...triage.matches.slice(0, 3).map(({ problem }) => `${problem.id}: ${problem.title}`),
+      ],
     };
   }
 

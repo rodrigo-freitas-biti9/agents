@@ -14,7 +14,7 @@ Nem todos os itens da visão são bibliotecas embutíveis no B9 Pulse. Esta matr
 | Codex | Visualize | Explorar fluxos, métricas e cenários | Capacidade do Codex; o app mantém seus próprios gráficos |
 | OpenAI Platform | Agents SDK | Runtime multiagente | Implementado |
 | OpenAI Platform | MCP | Ferramentas fiscais para ChatGPT/Codex | MCP local implementado |
-| OpenAI Platform | Skills | Playbooks reutilizáveis | Duas skills no plug-in |
+| OpenAI Platform | Skills | Playbooks reutilizáveis | Três skills no plug-in: triagem, resolução e Lovable |
 | OpenAI Platform | Agent Builder | Protótipo visual temporário | Não usado em produção; encerramento anunciado para 30/11/2026 |
 | Lovable | Design System | Identidade visual Biti9 | Já aplicada no app atual |
 | Lovable | Plan | Planejar mudanças antes de consumir build credits | Coberto pela skill de integração |

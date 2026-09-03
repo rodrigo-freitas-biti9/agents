@@ -1,0 +1,9 @@
+interface:
+  display_name: "Classificar dor fiscal"
+  short_description: "Roteie uma dor entre 100 casos fiscais"
+  brand_color: "#29D8EA"
+  default_prompt: "Use $triage-fiscal-problem para classificar esta dor fiscal e indicar o especialista e próximo passo."
+
+policy:
+  allow_implicit_invocation: true
+

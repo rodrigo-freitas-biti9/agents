@@ -7,9 +7,9 @@ description: Diagnose and drive B9 Pulse invoice and purchase-order incidents to
 
 Start a five-minute case clock as soon as a concrete customer incident is identified.
 
-1. Read the current fiscal context with B9 Pulse MCP tools before drawing conclusions.
+1. Call `triage_fiscal_problem`, then read the current fiscal context with B9 Pulse MCP tools before drawing conclusions.
 2. Identify the customer, invoice, supplier, purchase order, current status, amount, date, and recorded reason. State which fields are missing rather than inferring them.
-3. Prioritize in this order unless customer impact shows otherwise: read/validation error, missing purchase order, amount mismatch, duplicate, purchase-order overrun, pending workflow.
+3. Use the catalog priority and verified customer impact. Preserve the returned `FP-###` identifier in the case record.
 4. Give the customer a plain-language diagnosis, evidence, and the smallest safe next action.
 5. Read-only investigation can proceed automatically. Before approval, rejection, payment, value correction, duplicate discard, or any production mutation, obtain explicit confirmation immediately before the action.
 6. After a mutation, re-read the record and verify its new state. A proposed action is not a resolved case.
