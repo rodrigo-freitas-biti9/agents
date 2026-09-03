@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "b9-pulse": {
+      "command": "node",
+      "args": ["../../dist/mcp-server.js"]
+    }
+  }
+}

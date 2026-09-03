@@ -1,0 +1,8 @@
+interface:
+  display_name: "Resolver caso fiscal"
+  short_description: "Diagnóstico e ação fiscal em cinco minutos"
+  brand_color: "#29D8EA"
+  default_prompt: "Use $resolve-fiscal-case para diagnosticar esta ocorrência e preparar o próximo passo seguro."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,29 @@
+{
+  "name": "@biti9/b9-pulse-agents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Multi-agent fiscal resolution runtime and MCP plugin for B9 Pulse.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/http-server.ts",
+    "start": "node dist/http-server.js",
+    "mcp": "node dist/mcp-server.js",
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --pool=threads --maxWorkers=1",
+    "check": "pnpm build && pnpm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "@openai/agents": "0.17.0",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "tsx": "4.23.13",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}

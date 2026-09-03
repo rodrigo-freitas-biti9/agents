@@ -1,0 +1,30 @@
+{
+  "name": "b9-pulse-agents",
+  "version": "0.1.0",
+  "description": "Diagnose and resolve B9 fiscal billing cases with evidence, approvals, and a five-minute SLA.",
+  "author": {
+    "name": "Biti9",
+    "url": "https://github.com/rodrigo-freitas-biti9"
+  },
+  "homepage": "https://github.com/rodrigo-freitas-biti9/agents",
+  "repository": "https://github.com/rodrigo-freitas-biti9/agents",
+  "license": "UNLICENSED",
+  "keywords": ["b9-pulse", "fiscal", "faturamento", "notas-fiscais", "mcp"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "B9 Pulse Agents",
+    "shortDescription": "Resolva ocorrências fiscais em até cinco minutos.",
+    "longDescription": "Orquestra diagnóstico, conciliação e resolução de notas fiscais e ordens de compra com evidências e confirmação humana.",
+    "developerName": "Biti9",
+    "category": "Productivity",
+    "capabilities": ["Read", "MCP", "Workflow"],
+    "websiteURL": "https://github.com/rodrigo-freitas-biti9/agents",
+    "defaultPrompt": [
+      "Diagnostique este caso fiscal e priorize o próximo passo.",
+      "Encontre a causa desta divergência de nota e OC.",
+      "Prepare uma resolução segura para este caso em cinco minutos."
+    ],
+    "brandColor": "#29D8EA"
+  },
+  "mcpServers": "./.mcp.json"
+}

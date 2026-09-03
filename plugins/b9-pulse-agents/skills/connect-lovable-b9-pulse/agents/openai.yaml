@@ -1,0 +1,8 @@
+interface:
+  display_name: "Conectar Lovable ao B9 Pulse"
+  short_description: "Integre o chat Lovable com os agentes B9"
+  brand_color: "#29D8EA"
+  default_prompt: "Use $connect-lovable-b9-pulse para conectar o frontend Lovable ao endpoint dos agentes."
+
+policy:
+  allow_implicit_invocation: true
